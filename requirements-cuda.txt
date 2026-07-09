@@ -1,0 +1,5 @@
+# CUDA-enabled PyTorch wheel.
+# Use this on Windows 11/Linux machines with an NVIDIA GPU + CUDA driver.
+# This pulls the current default wheel which includes CUDA 12.x libraries.
+torch
+numpy

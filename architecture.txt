@@ -1,0 +1,61 @@
+DRV-LM: Hybrid Diffusion-AR Architecture v2 (Draft -> Refine -> Verify)
+├── 0. Backbone & Initialization
+│   ├── Pre-trained AR weights (Qwen-3 / LLaMA-3) as denoiser init
+│   ├── Attention-mask annealing: causal -> block-hybrid during continual pretraining
+│   │   (unlocks bidirectionality without catastrophic forgetting)
+│   ├── Optional sparse-MoE FFN (capacity up at fixed inference FLOPs)
+│   └── Special tokens: [MASK], [EXPAND] (variable length), [BOT]/[EOT] (latent thought spans)
+├── 1. Unified Embedding & Conditioning
+│   ├── 2D RoPE
+│   │   ├── Axis 1: token position (block-relative inside draft region)
+│   │   └── Axis 2: diffusion timestep t
+│   ├── adaLN/FiLM timestep conditioning on LayerNorms (global noise-level signal)
+│   └── Region-mode embeddings: {committed, draft, latent-thought}
+├── 2. Forward Process & Training Objective (Non-Markovian, Block-wise)
+│   ├── Corruption: absorbing [MASK] noise + small uniform noise
+│   │   (trains the model to fix *wrong* tokens, not just fill masks -> self-correction)
+│   ├── Block-wise timestep sampling: independent t per block
+│   │   (teaches block diffusion -> KV-cache compatible, streamable)
+│   ├── Truncated trajectory window: condition on last W states x_t..x_(t+W), not full x_1..x_T
+│   │   (CaDDi-style non-Markovian context at bounded memory)
+│   └── Multi-task loss, single forward pass
+│       ├── L_diff: weighted masked-diffusion ELBO on noisy/draft region
+│       ├── L_AR: next-token NLL on clean/committed region
+│       ├── L_align: consistency loss pulling diffusion marginals toward AR conditionals
+│       │   (directly trains speculative acceptance rate -> the real speed lever)
+│       └── L_verify: verifier-head loss predicting which drafts survive AR check
+├── 3. Hybrid Decoder (Single-Pass, Tri-Mode Transformer)
+│   ├── Structured attention mask (one forward = draft + verify; FlexAttention kernel)
+│   │   ├── Committed prefix: strict causal; never attends to drafts
+│   │   ├── Draft block: bidirectional within block; attends to prefix + trajectory window
+│   │   └── Latent-thought slots: bidirectional, hidden from the output stream
+│   ├── Recurrent-Depth Refinement Core ("deep recursive thinking")
+│   │   ├── Shared middle stack looped k times on draft/latent states before decoding
+│   │   ├── Adaptive halting (entropy/ACT): hard spans think longer, easy spans exit early
+│   │   └── No tokens emitted during loops -> reasoning depth without sequence-length cost
+│   └── Heads
+│       ├── Shared token head (both modes)
+│       ├── Verifier/energy head: trajectory-consistency score per span
+│       └── Optional multi-token-prediction head (extra lookahead supervision)
+├── 4. Inference: Iterative Draft -> Refine -> Verify Loop
+│   ├── A. Draft: parallel diffusion proposes block of N tokens
+│   │   └── N is adaptive: grows with rolling acceptance rate, shrinks on high entropy
+│   ├── B. Refine: k recurrent latent iterations on low-confidence positions (adaptive compute)
+│   ├── C. Review: non-Markovian remasking; re-noise tokens the verifier flags
+│   │   against the trajectory window (early mistakes stay revisable)
+│   ├── D. Verify: same-pass AR speculative acceptance-rejection
+│   │   ├── Provably preserves the target AR distribution (lossless quality)
+│   │   ├── Accepted prefix commits -> exact KV-cache append
+│   │   └── Rejected drafts recycled as init noise for the next block (no wasted compute)
+│   ├── E. Length control: [EXPAND]/insertion tokens grow the canvas; EOS-consensus early exit
+│   └── Controls: entropy-ordered unmasking, per-mode temperature, block-level nucleus
+├── 5. Post-Training for Reasoning
+│   ├── Diffusion-native CoT SFT: learn to iteratively refine whole reasoning traces
+│   ├── RL (GRPO adapted to diffusion ELBO likelihoods):
+│   │   reward = answer correctness + acceptance rate (quality and speed co-optimized)
+│   └── Trajectory self-distillation: many-step teacher -> few-step student
+└── 6. Systems & Serving
+    ├── Exact KV cache on committed tokens + delayed/approx cache inside draft blocks
+    ├── Fused kernels: hybrid-mask attention, batched remasking, CUDA graphs
+    ├── Free-slot exploitation: drafts ride memory-bound decode steps at near-zero cost
+    └── Speed law: tokens/step ≈ acceptance_rate × N  (optimize both, not just N)
