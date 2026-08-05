@@ -1,0 +1,7 @@
+# Optional model-conversion toolchain (GGUF / ONNX / safetensors).
+# Used by:  python -m mariana export --format all
+# Pure-python / prebuilt wheels -> cross-platform (Linux/macOS/Windows).
+gguf>=0.10
+safetensors>=0.4
+onnx>=1.16
+onnxruntime>=1.17 ; platform_machine != 'wasm32'

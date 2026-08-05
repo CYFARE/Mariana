@@ -1,0 +1,4 @@
+# Dataset preparation tooling (streaming downloads from HuggingFace).
+# Used by:  scripts/prepare_common_corpus.py
+datasets>=2.20
+huggingface-hub>=0.24

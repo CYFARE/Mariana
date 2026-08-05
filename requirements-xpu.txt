@@ -1,0 +1,4 @@
+# Intel XPU (Arc / Data Center GPU) PyTorch wheels.
+--index-url https://download.pytorch.org/whl/xpu
+torch>=2.5
+numpy

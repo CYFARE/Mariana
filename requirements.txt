@@ -1,5 +1,17 @@
-# CPU-only PyTorch wheel.
-# Use this on Linux machines without a CUDA driver (e.g. the Kali laptop).
---index-url https://download.pytorch.org/whl/cpu
-torch
+# Cross-platform default: GPU-first with automatic CPU fallback.
+#
+#   pip install -r requirements.txt
+#
+# What you get per platform (pip resolves the right wheel automatically):
+#   * Linux / Windows + NVIDIA GPU : CUDA-enabled torch build (GPU default)
+#   * macOS (Apple Silicon)        : MPS-enabled torch build (GPU default)
+#   * anything else                : CPU build, used as the fallback
+#
+# The code auto-detects the best device at runtime (CUDA -> XPU -> MPS -> CPU)
+# and every feature degrades gracefully, so no flags are needed.
+#
+# For a smaller CPU-only install:  pip install -r requirements-cpu.txt
+# For Intel Arc/XPU:               pip install -r requirements-xpu.txt
+# Export toolchain (GGUF/ONNX):    pip install -r requirements-export.txt
+torch>=2.5
 numpy

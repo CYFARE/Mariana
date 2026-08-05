@@ -1,0 +1,7 @@
+__pycache__/
+*.pyc
+venv/
+.tinyshakespeare.txt
+mariana.pt
+exports/
+.pytest_cache/

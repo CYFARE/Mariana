@@ -1,0 +1,5 @@
+# CPU-only PyTorch wheels (small download, works on any OS/arch).
+# Use this on machines without a GPU driver, or for CI.
+--index-url https://download.pytorch.org/whl/cpu
+torch>=2.5
+numpy

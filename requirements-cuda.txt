@@ -1,5 +1,7 @@
-# CUDA-enabled PyTorch wheel.
-# Use this on Windows 11/Linux machines with an NVIDIA GPU + CUDA driver.
-# This pulls the current default wheel which includes CUDA 12.x libraries.
-torch
+# CUDA-enabled PyTorch wheels (Windows 11 / Linux + NVIDIA GPU + CUDA driver).
+# The default wheel already bundles CUDA 12.x runtime libraries, so this file
+# is identical to requirements.txt on purpose; it exists for clarity and for
+# pinning a specific CUDA toolchain if needed, e.g.:
+#   --index-url https://download.pytorch.org/whl/cu128
+torch>=2.5
 numpy
